@@ -1,0 +1,191 @@
+
+// control ------------------------>
+#include "Printinfo_conf.h"  // Print options
+
+// local alg lib ----------------------------------------------->
+// #include "sparse_matrixM.h"  // algebra sparse matrices
+// #include "numeric_vectorM.h" // algebra numerical vectors
+// #include "linear_solverM.h"  // algebra solvers
+
+// Femus lib include --------------->
+#include "MGSolver_L3_R.h"       // Navier-Stokes class header file
+// #include "MGFE_conf.h"        // FEM approximation
+// #include "MGGeomEl.h"        // FEM approximation
+#include "MGMesh_L1_Extended.h"
+// #include "MGFE.h"          // Mesh class
+// #include "EquationSystemsExtendedM.h"  // Equation map class
+
+
+
+
+
+// ==============================================================
+// ===============================================================
+void MGSolR::print_normal_hdf5_R(
+    const int nodes,                  ///< nodes
+    const hid_t file_id,             ///< file name to print
+    hsize_t  dimsf[],
+    double sol[]
+) { // ===================================================================================
+
+    // print stream, normal ,tg  direction ---------------------
+      for(int nt=0; nt<_ndim_B; nt++) {
+        for(int ivar=0; ivar<_ndim_B; ivar++) {
+            std::string var_name = "x"+to_string(nt)+to_string(ivar);
+            for(int i = 0; i < dimsf[0]; i++) {
+                sol[i]=  _mgmesh._Oxyz_pts[nodes*_ndim_B*nt+i*_ndim_B+ivar];
+            }
+             _mgutils_D.print_Dhdf5(file_id,var_name, dimsf, sol);
+        }
+    }
+    return;
+}
+
+
+void MGSolR::print_normal_xdmf_R(
+    std::ofstream& out,   ///<  xdmf file
+    int nodes,            ///<  number of nodes
+    std::string file_name ///<  xdmf file name
+)  {  // ===========================================================================
+     for(int nt=0; nt<_ndim_B; nt++) {
+        for(int ivar = 0; ivar < _ndim_B ; ivar++) {
+            std::string var_name = "x"+to_string(nt)+to_string(ivar);
+            print_u_xdmf_pts_D(out, nodes,var_name,file_name,"Node","Float");
+        }
+    }
+    
+    return;
+}
+
+// ===================================================================
+// ===================================================================
+// MGSolverR_CHECK.C CHECK==============================================
+//    C1)MGSolR::check_file_R
+//    C2)MGSolR::check_KeMBC_R
+//    C3)MGSolR::check_FeMBC_R
+//    c4int MGSolR::check_res_R
+// ===================================================================
+// ===================================================================
+int MGSolR::check_file_R(
+ const std::string name_file
+){ 
+//    open file for hf5 storage
+   hid_t file_id = H5Fcreate( name_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+   return   file_id ;
+}
+
+
+// void MGSolR::check_close(
+//   hid_t loc_id
+// ){ 
+//   H5Fclose( loc_id);
+//    return;
+// }
+
+int MGSolR::check_KeMBC_R(
+  const std::string name_file,
+ const std::string name_dataset
+){ 
+   // open file for hf5 storage
+    hid_t file_id = H5Fopen(name_file.c_str(),H5F_ACC_RDWR, H5P_DEFAULT);
+   hsize_t  dimsf[2]; dimsf[0] =_el_dof_D[0] ; dimsf[1] =_el_dof_D[0];
+   // check matrix
+   double sol[27][27];
+   for(int i=0; i<dimsf[0]; i++)
+    for(int j = 0; j < dimsf[1]; j++)   sol[i][j]=_KeMBC_R[i*dimsf[0]+j];
+    
+   hid_t dataspace = H5Screate_simple(2, dimsf, NULL);
+   hid_t dataset = H5Dcreate(file_id,name_dataset.c_str(), H5T_NATIVE_DOUBLE, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+   hid_t status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,sol);
+   H5Sclose(dataspace);
+   H5Dclose(dataset);
+     H5Fclose(file_id);
+  
+  return status;
+}
+   
+//    int MGSolR::check_KeMBC1(
+//   const std::string name_file,
+//  const std::string name_dataset
+// ){ 
+//    // open file for hf5 storage
+//     hid_t file_id = H5Fopen(name_file.c_str(),H5F_ACC_RDWR, H5P_DEFAULT);
+//    hsize_t  dimsf[2]; dimsf[0] =_el_dof_D[0] ; dimsf[1] =_el_dof_D[0];
+//    // check matrix
+//    double sol[27][27];
+//    for(int i=0; i<dimsf[0]; i++)
+//     for(int j = 0; j < dimsf[1]; j++)   sol[i][j]=_KeMBC_R1[i*dimsf[0]+j];
+//     
+//    hid_t dataspace = H5Screate_simple(2, dimsf, NULL);
+//    hid_t dataset = H5Dcreate(file_id,name_dataset.c_str(), H5T_NATIVE_DOUBLE, dataspace,H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//    hid_t status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,sol);
+//    H5Sclose(dataspace);
+//    H5Dclose(dataset);
+//      H5Fclose(file_id);
+//   
+//   return status;
+// }
+   
+int MGSolR::check_FeMBC_R(
+ const std::string name_file,
+ const std::string name_dataset
+){ 
+ 
+   // open file for hf5 storage
+  hid_t file_id = H5Fopen( name_file.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+ 
+   hsize_t  dimsf[2]; dimsf[0]=_el_dof_D[0]; dimsf[1] =1;   
+   //rhs
+//    double sol1[27];
+//    for(int i = 0; i < _el_dof_D[0]; i++)   sol1[i]=_FeMBC[i];
+  hid_t status= _mgutils_D.print_Dhdf5(file_id,name_dataset.c_str(), dimsf,_FeMBC_R);
+ 
+     H5Fclose(file_id);
+  
+  return status;
+}
+
+// int MGSolR::check_FeMBC1(
+//  const std::string name_file,
+//  const std::string name_dataset
+// ){ 
+//  
+//    // open file for hf5 storage
+//   hid_t file_id = H5Fopen( name_file.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+//  
+//    hsize_t  dimsf[2]; dimsf[0]=_el_dof_D[0]; dimsf[1] =1;   
+//    //rhs
+// //    double sol1[27];
+// //    for(int i = 0; i < _el_dof_D[0]; i++)   sol1[i]=_FeMBC[i];
+//   hid_t status= _mgutils.print_Dhdf5(file_id,name_dataset.c_str(), dimsf,_FeMBC1);
+//  
+//      H5Fclose(file_id);
+//   
+//   return status;
+// }
+int MGSolR::check_res_R(double res[]) {
+
+   
+   
+   
+}
+
+
+// This funtion checks _mgmesh._Oxyz_pts structure
+ void MGSolR::CHECK_R1(){
+     for(int in = 0; in < _top_offset_D  ; in++){   
+         std::cout << in << "  ";
+          for(int tn = 0; tn <  _ndim_B; tn++){
+                               std::cout  << tn<<"(";        
+                                         for(int ivar = 0; ivar < _ndim_B; ivar++) {
+                                    std::cout << _mgmesh._Oxyz_pts[_top_offset_D*_ndim_B*tn+in*_ndim_B+ivar] << "  ";
+                                }
+                                 std::cout <<") ";
+                                }
+                                std::cout << std::endl;
+                             }
+                             return;
+    }
+
+
+

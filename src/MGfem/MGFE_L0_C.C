@@ -1,0 +1,2305 @@
+// // The libMesh Finite Element Library.
+// // Copyright (C) 2002-2024 Benjamin S. Kirk, John W. Peterson, Roy H. Stogner
+// 
+// // This library is free software; you can redistribute it and/or
+// // modify it under the terms of the GNU Lesser General Public
+// // License as published by the Free Software Foundation; either
+// // version 2.1 of the License, or (at your option) any later version.
+// 
+// // This library is distributed in the hope that it will be useful,
+// // but WITHOUT ANY WARRANTY; without even the implied warranty of
+// // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// // Lesser General Public License for more details.
+// 
+// // You should have received a copy of the GNU Lesser General Public
+// // License along with this library; if not, write to the Free Software
+// // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// 
+// 
+// 
+// // Local includes
+#include "MGFE_L0_C.h"
+#include "MGFE_L2_FE_template.h"
+// #include "MGFEbase.h"
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// #include "libmesh/fe_interface_macros.h"
+// #include "libmesh/inf_fe.h"
+// #endif
+// 
+// #include "libmesh/elem.h"
+// #include "libmesh/fe.h"
+// #include "libmesh/fe_compute_data.h"
+// #include "libmesh/dof_map.h"
+// #include "libmesh/enum_fe_family.h"
+// #include "libmesh/enum_order.h"
+// #include "libmesh/enum_elem_type.h"
+// #include "libmesh/enum_to_string.h"
+// 
+// namespace libMesh
+// {
+// 
+// //------------------------------------------------------------
+//MGFEC class members
+ MGFEC::MGFEC() {   std::cerr<<"ERROR: Do not define an object of this type."; }
+
+bool MGFEC::is_InfFE_elem(const ElemType){  return false;}
+
+
+// #ifdef LIBMESH_ENABLE_HIGHER_ORDER_SHAPES
+// #define fe_family_switch(dim, func_and_args, prefix, suffix)            \
+//   do {                                                                  \
+//     switch (fe_t.family)                                                \
+//       {                                                                 \
+//       case CLOUGH:                                                      \
+//         prefix MGFE<dim,CLOUGH>::func_and_args suffix                     \
+//       case HERMITE:                                                     \
+//         prefix MGFE<dim,HERMITE>::func_and_args suffix                    \
+//       case HIERARCHIC:                                                  \
+//         prefix MGFE<dim,HIERARCHIC>::func_and_args suffix                 \
+//       case L2_HIERARCHIC:                                               \
+//         prefix MGFE<dim,L2_HIERARCHIC>::func_and_args suffix              \
+//       case SIDE_HIERARCHIC:                                             \
+//         prefix MGFE<dim,SIDE_HIERARCHIC>::func_and_args suffix            \
+//       case LAGRANGE:                                                    \
+//         prefix MGFE<dim,LAGRANGE>::func_and_args suffix                   \
+//       case L2_LAGRANGE:                                                 \
+//         prefix MGFE<dim,L2_LAGRANGE>::func_and_args suffix                \
+//       case MONOMIAL:                                                    \
+//         prefix MGFE<dim,MONOMIAL>::func_and_args suffix                   \
+//       case SCALAR:                                                      \
+//         prefix MGFE<dim,SCALAR>::func_and_args suffix                     \
+//       case BERNSTEIN:                                                   \
+//         prefix MGFE<dim,BERNSTEIN>::func_and_args suffix                  \
+//       case SZABAB:                                                      \
+//         prefix MGFE<dim,SZABAB>::func_and_args suffix                     \
+//       case RATIONAL_BERNSTEIN:                                          \
+//         prefix MGFE<dim,RATIONAL_BERNSTEIN>::func_and_args suffix         \
+//       case XYZ:                                                         \
+//         prefix FEXYZ<dim>::func_and_args suffix                         \
+//       case SUBDIVISION:                                                 \
+//         libmesh_assert_equal_to (dim, 2);                               \
+//         prefix MGFE<2,SUBDIVISION>::func_and_args suffix                  \
+//       default:                                                          \
+//         std::cerr<<"Unsupported family = " << Utility::enum_to_string(fe_t.family)); \
+//       }                                                                 \
+//   } while (0)
+// 
+// #define fe_family_with_vec_switch(dim, func_and_args, prefix, suffix)   \
+//   do {                                                                  \
+//     switch (fe_t.family)                                                \
+//       {                                                                 \
+//       case CLOUGH:                                                      \
+//         prefix MGFE<dim,CLOUGH>::func_and_args suffix                     \
+//       case HERMITE:                                                     \
+//         prefix MGFE<dim,HERMITE>::func_and_args suffix                    \
+//       case HIERARCHIC:                                                  \
+//         prefix MGFE<dim,HIERARCHIC>::func_and_args suffix                 \
+//       case HIERARCHIC_VEC:                                              \
+//         prefix FEHierarchicVec<dim>::func_and_args suffix               \
+//       case L2_HIERARCHIC:                                               \
+//         prefix MGFE<dim,L2_HIERARCHIC>::func_and_args suffix              \
+//       case L2_HIERARCHIC_VEC:                                           \
+//         prefix FEL2HierarchicVec<dim>::func_and_args suffix             \
+//       case SIDE_HIERARCHIC:                                             \
+//         prefix MGFE<dim,SIDE_HIERARCHIC>::func_and_args suffix            \
+//       case LAGRANGE:                                                    \
+//         prefix MGFE<dim,LAGRANGE>::func_and_args suffix                   \
+//       case LAGRANGE_VEC:                                                \
+//         prefix FELagrangeVec<dim>::func_and_args suffix                 \
+//       case L2_LAGRANGE:                                                 \
+//         prefix MGFE<dim,L2_LAGRANGE>::func_and_args suffix                \
+//       case L2_LAGRANGE_VEC:                                             \
+//         prefix FEL2LagrangeVec<dim>::func_and_args suffix               \
+//       case MONOMIAL:                                                    \
+//         prefix MGFE<dim,MONOMIAL>::func_and_args suffix                   \
+//       case MONOMIAL_VEC:                                                \
+//         prefix FEMonomialVec<dim>::func_and_args suffix                 \
+//       case SCALAR:                                                      \
+//         prefix MGFE<dim,SCALAR>::func_and_args suffix                     \
+//       case BERNSTEIN:                                                   \
+//         prefix MGFE<dim,BERNSTEIN>::func_and_args suffix                  \
+//       case SZABAB:                                                      \
+//         prefix MGFE<dim,SZABAB>::func_and_args suffix                     \
+//       case RATIONAL_BERNSTEIN:                                          \
+//         prefix MGFE<dim,RATIONAL_BERNSTEIN>::func_and_args suffix         \
+//       case XYZ:                                                         \
+//         prefix FEXYZ<dim>::func_and_args suffix                         \
+//       case SUBDIVISION:                                                 \
+//         libmesh_assert_equal_to (dim, 2);                               \
+//         prefix MGFE<2,SUBDIVISION>::func_and_args suffix                  \
+//       case NEDELEC_ONE:                                                 \
+//         prefix FENedelecOne<dim>::func_and_args suffix                  \
+//       case RAVIART_THOMAS:                                              \
+//         prefix FERaviartThomas<dim>::func_and_args suffix               \
+//       case L2_RAVIART_THOMAS:                                           \
+//         prefix FEL2RaviartThomas<dim>::func_and_args suffix             \
+//       default:                                                          \
+//         std::cerr<<"Unsupported family = " << Utility::enum_to_string(fe_t.family)); \
+//       }                                                                 \
+//   } while (0)
+// 
+// #define fe_scalar_vec_error_switch(dim, func_and_args, prefix, suffix)  \
+//   do {                                                                  \
+//     switch (fe_t.family)                                                \
+//       {                                                                 \
+//       case CLOUGH:                                                      \
+//         prefix MGFE<dim,CLOUGH>::func_and_args suffix                     \
+//       case HERMITE:                                                     \
+//         prefix MGFE<dim,HERMITE>::func_and_args suffix                    \
+//       case HIERARCHIC:                                                  \
+//         prefix MGFE<dim,HIERARCHIC>::func_and_args suffix                 \
+//       case L2_HIERARCHIC:                                               \
+//         prefix MGFE<dim,L2_HIERARCHIC>::func_and_args suffix              \
+//       case SIDE_HIERARCHIC:                                             \
+//         prefix MGFE<dim,SIDE_HIERARCHIC>::func_and_args suffix            \
+//       case LAGRANGE:                                                    \
+//         prefix MGFE<dim,LAGRANGE>::func_and_args suffix                   \
+//       case L2_LAGRANGE:                                                 \
+//         prefix MGFE<dim,L2_LAGRANGE>::func_and_args suffix                \
+//       case MONOMIAL:                                                    \
+//         prefix MGFE<dim,MONOMIAL>::func_and_args suffix                   \
+//       case SCALAR:                                                      \
+//         prefix MGFE<dim,SCALAR>::func_and_args suffix                     \
+//       case BERNSTEIN:                                                   \
+//         prefix MGFE<dim,BERNSTEIN>::func_and_args suffix                  \
+//       case RATIONAL_BERNSTEIN:                                          \
+//         prefix MGFE<dim,RATIONAL_BERNSTEIN>::func_and_args suffix         \
+//       case SZABAB:                                                      \
+//         prefix MGFE<dim,SZABAB>::func_and_args suffix                     \
+//       case XYZ:                                                         \
+//         prefix FEXYZ<dim>::func_and_args suffix                         \
+//       case SUBDIVISION:                                                 \
+//         libmesh_assert_equal_to (dim, 2);                               \
+//         prefix MGFE<2,SUBDIVISION>::func_and_args suffix                  \
+//       case HIERARCHIC_VEC:                                              \
+//       case L2_HIERARCHIC_VEC:                                           \
+//       case LAGRANGE_VEC:                                                \
+//       case L2_LAGRANGE_VEC:                                             \
+//       case NEDELEC_ONE:                                                 \
+//       case MONOMIAL_VEC:                                                \
+//       case RAVIART_THOMAS:                                              \
+//       case L2_RAVIART_THOMAS:                                           \
+//         std::cerr<<"Error: Can only request scalar valued elements for Real MGFEC::func_and_args"); \
+//       default:                                                          \
+//         std::cerr<<"Unsupported family = " << Utility::enum_to_string(fe_t.family)); \
+//       }                                                                 \
+//   } while (0)
+// 
+// 
+// #define fe_vector_scalar_error_switch(dim, func_and_args, prefix, suffix) \
+//   do {                                                                  \
+//     switch (fe_t.family)                                                \
+//       {                                                                 \
+//       case HIERARCHIC_VEC:                                              \
+//         prefix FEHierarchicVec<dim>::func_and_args suffix               \
+//       case L2_HIERARCHIC_VEC:                                           \
+//         prefix FEL2HierarchicVec<dim>::func_and_args suffix             \
+//       case LAGRANGE_VEC:                                                \
+//         prefix FELagrangeVec<dim>::func_and_args suffix                 \
+//       case L2_LAGRANGE_VEC:                                             \
+//         prefix FEL2LagrangeVec<dim>::func_and_args suffix               \
+//       case NEDELEC_ONE:                                                 \
+//         prefix FENedelecOne<dim>::func_and_args suffix                  \
+//       case MONOMIAL_VEC:                                                \
+//         prefix FEMonomialVec<dim>::func_and_args suffix                 \
+//       case RAVIART_THOMAS:                                              \
+//         prefix FERaviartThomas<dim>::func_and_args suffix               \
+//       case L2_RAVIART_THOMAS:                                           \
+//         prefix FEL2RaviartThomas<dim>::func_and_args suffix             \
+//       case HERMITE:                                                     \
+//       case HIERARCHIC:                                                  \
+//       case L2_HIERARCHIC:                                               \
+//       case SIDE_HIERARCHIC:                                             \
+//       case LAGRANGE:                                                    \
+//       case L2_LAGRANGE:                                                 \
+//       case MONOMIAL:                                                    \
+//       case SCALAR:                                                      \
+//       case BERNSTEIN:                                                   \
+//       case SZABAB:                                                      \
+//       case RATIONAL_BERNSTEIN:                                          \
+//       case XYZ:                                                         \
+//       case SUBDIVISION:                                                 \
+//         std::cerr<<"Error: Can only request vector valued elements for RealGradient MGFEC::shape"); \
+//       default:                                                          \
+//         std::cerr<<"Unsupported family = " << Utility::enum_to_string(fe_t.family)); \
+//       }                                                                 \
+//   } while (0)
+// 
+// #else
+// #define fe_family_switch(dim, func_and_args, prefix, suffix)            \
+//   do {                                                                  \
+//     switch (fe_t.family)                                                \
+//       {                                                                 \
+//       case CLOUGH:                                                      \
+//         prefix MGFE<dim,CLOUGH>::func_and_args suffix                     \
+//       case HERMITE:                                                     \
+//         prefix MGFE<dim,HERMITE>::func_and_args suffix                    \
+//       case HIERARCHIC:                                                  \
+//         prefix MGFE<dim,HIERARCHIC>::func_and_args suffix                 \
+//       case L2_HIERARCHIC:                                               \
+//         prefix MGFE<dim,L2_HIERARCHIC>::func_and_args suffix              \
+//       case SIDE_HIERARCHIC:                                             \
+//         prefix MGFE<dim,SIDE_HIERARCHIC>::func_and_args suffix            \
+//       case LAGRANGE:                                                    \
+//         prefix MGFE<dim,LAGRANGE>::func_and_args suffix                   \
+//       case L2_LAGRANGE:                                                 \
+//         prefix MGFE<dim,L2_LAGRANGE>::func_and_args suffix                \
+//       case MONOMIAL:                                                    \
+//         prefix MGFE<dim,MONOMIAL>::func_and_args suffix                   \
+//       case SCALAR:                                                      \
+//         prefix MGFE<dim,SCALAR>::func_and_args suffix                     \
+//       case XYZ:                                                         \
+//         prefix FEXYZ<dim>::func_and_args suffix                         \
+//       case SUBDIVISION:                                                 \
+//         libmesh_assert_equal_to (dim, 2);                               \
+//         prefix MGFE<2,SUBDIVISION>::func_and_args suffix                  \
+//       default:                                                          \
+//         std::cerr<<"Unsupported family = " << Utility::enum_to_string(fe_t.family)); \
+//       }                                                                 \
+//   } while (0)
+
+
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#define fe_family_switch(dim, func_and_args, prefix, suffix)            \
+  do {                                                                  \
+    switch (fe_t.family)                                                \
+      {                                                                 \
+      case LAGRANGE:                                                    \
+         prefix MGFE<dim,LAGRANGE>::func_and_args suffix                   \  
+      default:                                                          \
+        std::cerr<<"Unsupported family = " <<fe_t.family;              \
+      }                                                                 \
+  } while (0)
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+  
+// #define fe_family_with_vec_switch(dim, func_and_args, prefix, suffix)   \
+//   do {                                                                  \
+//     switch (fe_t.family)                                                \
+//       {                                                                 \
+//       case CLOUGH:                                                      \
+//         prefix MGFE<dim,CLOUGH>::func_and_args suffix                     \
+//       case HERMITE:                                                     \
+//         prefix MGFE<dim,HERMITE>::func_and_args suffix                    \
+//       case HIERARCHIC:                                                  \
+//         prefix MGFE<dim,HIERARCHIC>::func_and_args suffix                 \
+//       case HIERARCHIC_VEC:                                              \
+//         prefix FEHierarchicVec<dim>::func_and_args suffix               \
+//       case L2_HIERARCHIC:                                               \
+//         prefix MGFE<dim,L2_HIERARCHIC>::func_and_args suffix              \
+//       case L2_HIERARCHIC_VEC:                                           \
+//         prefix FEL2HierarchicVec<dim>::func_and_args suffix             \
+//       case SIDE_HIERARCHIC:                                             \
+//         prefix MGFE<dim,SIDE_HIERARCHIC>::func_and_args suffix            \
+//       case LAGRANGE:                                                    \
+//         prefix MGFE<dim,LAGRANGE>::func_and_args suffix                   \
+//       case LAGRANGE_VEC:                                                \
+//         prefix FELagrangeVec<dim>::func_and_args suffix                 \
+//       case L2_LAGRANGE:                                                 \
+//         prefix MGFE<dim,L2_LAGRANGE>::func_and_args suffix                \
+//       case L2_LAGRANGE_VEC:                                             \
+//         prefix FEL2LagrangeVec<dim>::func_and_args suffix               \
+//       case MONOMIAL:                                                    \
+//         prefix MGFE<dim,MONOMIAL>::func_and_args suffix                   \
+//       case MONOMIAL_VEC:                                                \
+//         prefix FEMonomialVec<dim>::func_and_args suffix                 \
+//       case SCALAR:                                                      \
+//         prefix MGFE<dim,SCALAR>::func_and_args suffix                     \
+//       case XYZ:                                                         \
+//         prefix FEXYZ<dim>::func_and_args suffix                         \
+//       case SUBDIVISION:                                                 \
+//         libmesh_assert_equal_to (dim, 2);                               \
+//         prefix MGFE<2,SUBDIVISION>::func_and_args suffix                  \
+//       case NEDELEC_ONE:                                                 \
+//         prefix FENedelecOne<dim>::func_and_args suffix                  \
+//       case RAVIART_THOMAS:                                              \
+//         prefix FERaviartThomas<dim>::func_and_args suffix               \
+//       case L2_RAVIART_THOMAS:                                           \
+//         prefix FEL2RaviartThomas<dim>::func_and_args suffix             \
+//       default:                                                          \
+//         std::cerr<<"Unsupported family = " << fe_t.family; \
+//       }                                                                 \
+//   } while (0)
+
+ //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+  #define fe_family_with_vec_switch(dim, func_and_args, prefix, suffix)   \
+  do {                                                                  \
+    switch (fe_t.family)                                                \
+      {                                                                 \
+              case LAGRANGE:                                                    \
+        prefix MGFE<dim,LAGRANGE>::func_and_args suffix                   \
+      default:                                                          \
+        std::cerr<<"Unsupported family = " << fe_t.family; \
+      }                                                                 \
+  } while (0)
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+  
+// #define fe_scalar_vec_error_switch(dim, func_and_args, prefix, suffix)  \
+//   do {                                                                  \
+//     switch (fe_t.family)                                                \
+//       {                                                                 \
+//       case CLOUGH:                                                      \
+//         prefix  MGFE<dim,CLOUGH>::func_and_args suffix                    \
+//       case HERMITE:                                                     \
+//         prefix  MGFE<dim,HERMITE>::func_and_args suffix                   \
+//       case HIERARCHIC:                                                  \
+//         prefix  MGFE<dim,HIERARCHIC>::func_and_args suffix                \
+//       case L2_HIERARCHIC:                                               \
+//         prefix  MGFE<dim,L2_HIERARCHIC>::func_and_args suffix             \
+//       case SIDE_HIERARCHIC:                                             \
+//         prefix  MGFE<dim,SIDE_HIERARCHIC>::func_and_args suffix           \
+//       case LAGRANGE:                                                    \
+//         prefix  MGFE<dim,LAGRANGE>::func_and_args suffix                  \
+//       case L2_LAGRANGE:                                                 \
+//         prefix  MGFE<dim,L2_LAGRANGE>::func_and_args suffix               \
+//       case MONOMIAL:                                                    \
+//         prefix  MGFE<dim,MONOMIAL>::func_and_args suffix                  \
+//       case SCALAR:                                                      \
+//         prefix  MGFE<dim,SCALAR>::func_and_args suffix                    \
+//       case XYZ:                                                         \
+//         prefix  FEXYZ<dim>::func_and_args suffix                        \
+//       case SUBDIVISION:                                                 \
+//         libmesh_assert_equal_to (dim, 2);                               \
+//         prefix  MGFE<2,SUBDIVISION>::func_and_args suffix                 \
+//       case HIERARCHIC_VEC:                                              \
+//       case LAGRANGE_VEC:                                                \
+//       case L2_LAGRANGE_VEC:                                             \
+//       case NEDELEC_ONE:                                                 \
+//       case MONOMIAL_VEC:                                                \
+//       case RAVIART_THOMAS:                                              \
+//       case L2_RAVIART_THOMAS:                                           \
+//         std::cerr<<"Error: Can only request scalar valued elements for Real MGFEC::func_and_args"); \
+//       default:                                                          \
+//         std::cerr<<"Unsupported family = " << Utility::enum_to_string(fe_t.family)); \
+//       }                                                                 \
+//   } while (0)
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#define fe_scalar_vec_error_switch(dim, func_and_args, prefix, suffix)  \
+  do {                                                                  \
+    switch (fe_t.family)                                                \
+      {                                                                 \
+        case LAGRANGE:                                                    \
+        std::cerr<<"Error: Can only request vector valued elements for RealGradient MGFEC::func_and_args"; \ 
+      default:                                                          \
+        std::cerr<<"Unsupported family = " << fe_t.family; \
+      }                                                                 \
+  } while (0)
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#define fe_vector_scalar_error_switch(dim, func_and_args, prefix, suffix) \
+  do {                                                                  \
+    switch (fe_t.family)                                                \
+      {                                                                 \
+      case HIERARCHIC_VEC:                                              \
+        prefix FEHierarchicVec<dim>::func_and_args suffix               \
+      case L2_HIERARCHIC_VEC:                                           \
+        prefix FEL2HierarchicVec<dim>::func_and_args suffix             \
+      case LAGRANGE_VEC:                                                \
+        prefix FELagrangeVec<dim>::func_and_args suffix                 \
+      case L2_LAGRANGE_VEC:                                             \
+        prefix FEL2LagrangeVec<dim>::func_and_args suffix               \
+      case NEDELEC_ONE:                                                 \
+        prefix FENedelecOne<dim>::func_and_args suffix                  \
+      case MONOMIAL_VEC:                                                \
+        prefix FEMonomialVec<dim>::func_and_args suffix                 \
+      case RAVIART_THOMAS:                                              \
+        prefix FERaviartThomas<dim>::func_and_args suffix               \
+      case L2_RAVIART_THOMAS:                                           \
+        prefix FEL2RaviartThomas<dim>::func_and_args suffix             \
+      case HERMITE:                                                     \
+      case HIERARCHIC:                                                  \
+      case L2_HIERARCHIC:                                               \
+      case SIDE_HIERARCHIC:                                             \
+      case LAGRANGE:                                                    \
+      case L2_LAGRANGE:                                                 \
+      case MONOMIAL:                                                    \
+      case SCALAR:                                                      \
+      case XYZ:                                                         \
+      case SUBDIVISION:                                                 \
+        std::cerr<<"Error: Can only request vector valued elements for RealGradient MGFEC::func_and_args"); \
+      default:                                                          \
+        std::cerr<<"Unsupported family = " <<fe_t.family; \
+      }                                                                 \
+  } while (0)
+// #endif
+// 
+// 
+#define fe_switch(func_and_args)                        \
+  do {                                                  \
+    switch (dim)                                        \
+      {                                                 \
+        /* 0D */                                        \
+      case 0:                                           \
+        fe_family_switch (0, func_and_args, return, ;); \
+        /* 1D */                                        \
+      case 1:                                           \
+        fe_family_switch (1, func_and_args, return, ;); \
+        /* 2D */                                        \
+      case 2:                                           \
+        fe_family_switch (2, func_and_args, return, ;); \
+        /* 3D */                                        \
+      case 3:                                           \
+        fe_family_switch (3, func_and_args, return, ;); \
+      default:                                          \
+        std::cerr<<"Invalid dim = " << dim;     \
+      }                                                 \
+  } while (0)
+
+#define fe_with_vec_switch(func_and_args)                               \
+  do {                                                                  \
+    switch (dim)                                                        \
+      {                                                                 \
+        /* 0D */                                                        \
+      case 0:                                                           \
+        fe_family_with_vec_switch (0, func_and_args, return, ;);        \
+        /* 1D */                                                        \
+      case 1:                                                           \
+        fe_family_with_vec_switch (1, func_and_args, return, ;);        \
+        /* 2D */                                                        \
+      case 2:                                                           \
+        fe_family_with_vec_switch (2, func_and_args, return, ;);        \
+        /* 3D */                                                        \
+      case 3:                                                           \
+        fe_family_with_vec_switch (3, func_and_args, return, ;);        \
+      default:                                                          \
+        std::cerr<<"Invalid dim = " << dim;                            \
+      }                                                                 \
+  } while (0)
+// 
+// 
+// #define void_fe_switch(func_and_args)                           \
+//   do {                                                          \
+//     switch (dim)                                                \
+//       {                                                         \
+//         /* 0D */                                                \
+//       case 0:                                                   \
+//         fe_family_switch (0, func_and_args, ;, ; return;);      \
+//         /* 1D */                                                \
+//       case 1:                                                   \
+//         fe_family_switch (1, func_and_args, ;, ; return;);      \
+//         /* 2D */                                                \
+//       case 2:                                                   \
+//         fe_family_switch (2, func_and_args, ;, ; return;);      \
+//         /* 3D */                                                \
+//       case 3:                                                   \
+//         fe_family_switch (3, func_and_args, ;, ; return;);      \
+//       default:                                                  \
+//         std::cerr<<"Invalid dim = " << dim);             \
+//       }                                                         \
+//   } while (0)
+// 
+// #define void_fe_with_vec_switch(func_and_args)                          \
+//   do {                                                                  \
+//     switch (dim)                                                        \
+//       {                                                                 \
+//         /* 0D */                                                        \
+//       case 0:                                                           \
+//         fe_family_with_vec_switch (0, func_and_args, ;, ; return;);     \
+//         /* 1D */                                                        \
+//       case 1:                                                           \
+//         fe_family_with_vec_switch (1, func_and_args, ;, ; return;);     \
+//         /* 2D */                                                        \
+//       case 2:                                                           \
+//         fe_family_with_vec_switch (2, func_and_args, ;, ; return;);     \
+//         /* 3D */                                                        \
+//       case 3:                                                           \
+//         fe_family_with_vec_switch (3, func_and_args, ;, ; return;);     \
+//       default:                                                          \
+//         std::cerr<<"Invalid dim = " << dim);                     \
+//       }                                                                 \
+  // } while (0)
+// 
+// 
+// ================================================
+unsigned int MGFEC::n_shape_functions(
+  const unsigned int dim, 
+  const FEType & fe_t, 
+  const ElemType t
+){// ================================================
+  // TODO:
+  // libmesh_deprecated();
+  const Order o = fe_t.order;
+  fe_with_vec_switch(n_shape_functions(t, o));
+}
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_shape_functions(const FEType & fe_t,
+//                                const Elem * elem,
+//                                const bool add_p_level)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+// 
+//   // Account for Elem::p_level() when computing total_order
+//   auto total_order = fe_t.order + add_p_level*elem->p_level();
+// 
+//   fe_with_vec_switch(n_shape_functions(elem->type(), total_order));
+// }
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_shape_functions(const FEType & fe_t,
+//                                const int extra_order,
+//                                const Elem * elem)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+//   /*
+//    * Since the FEType, stored in DofMap/(some System child), has to
+//    * be the _same_ for InfFE and FE, we have to catch calls
+//    * to infinite elements through the element type.
+//    */
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_n_shape_functions(fe_t, elem);
+// 
+// #endif
+// 
+//   // Ignore Elem::p_level() and instead use extra_order to compute total_order.
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   fe_with_vec_switch(n_shape_functions(elem->type(), total_order));
+// }
+// 
+// 
+// 
+unsigned int MGFEC::n_dofs(
+  const unsigned int dim,
+  const FEType & fe_t,
+  const ElemType t
+){
+  // libmesh_deprecated();
+  const Order o = fe_t.order;
+  fe_with_vec_switch(n_dofs(t, o));
+}
+// 
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_dofs (const unsigned int dim,
+//                      const FEType & fe_t,
+//                      const Elem * elem)
+// {
+//   libmesh_deprecated();
+// 
+//   FEType p_refined_fe_t = fe_t;
+//   p_refined_fe_t.order = p_refined_fe_t.order + elem->p_level();
+//   return MGFEC::n_dofs(dim, p_refined_fe_t, elem->type());
+// }
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_dofs(const FEType & fe_t,
+//                     const Elem * elem,
+//                     const bool add_p_level)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   // InfElems currently don't support p_level()
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_n_dofs(fe_t, elem);
+// 
+// #endif
+// 
+//   // Account for Elem::p_level() when computing total_order
+//   auto total_order = fe_t.order + add_p_level*elem->p_level();
+// 
+//   fe_with_vec_switch(n_dofs(elem->type(), total_order));
+// }
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_dofs(const FEType & fe_t,
+//                     int extra_order,
+//                     const Elem * elem)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   // InfElems currently don't support p_level()
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_n_dofs(fe_t, elem);
+// 
+// #endif
+// 
+//   // Elem::p_level() is ignored, extra_order is used instead.
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   fe_with_vec_switch(n_dofs(elem->type(), total_order));
+// }
+// 
+// 
+// =======================================================
+ unsigned int MGFEC::n_dofs_at_node(
+   const unsigned int dim,
+   const FEType & fe_t,
+   const ElemType t,
+   const unsigned int n
+ ){  // TODO:  // libmesh_deprecated();
+
+  const Order o = fe_t.order;
+  fe_with_vec_switch(n_dofs_at_node(t, o, n));
+}
+// 
+// 
+// 
+// MGFEC::n_dofs_at_node_ptr
+// MGFEC::n_dofs_at_node_function(const unsigned int dim,
+//                                      const FEType & fe_t)
+// {
+//   libmesh_deprecated();
+// 
+//   fe_with_vec_switch(n_dofs_at_node);
+// }
+// 
+// 
+// 
+// MGFEC::n_dofs_at_node_ptr
+// MGFEC::n_dofs_at_node_function(const FEType & fe_t,
+//                                      const Elem * elem)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+//   fe_with_vec_switch(n_dofs_at_node);
+// }
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_dofs_at_node(const FEType & fe_t,
+//                             const Elem * elem,
+//                             const unsigned int n,
+//                             const bool add_p_level)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_n_dofs_at_node(fe_t, elem, n);
+// 
+// #endif
+// 
+//   // Account for Elem::p_level() when computing total_order
+//   auto total_order = fe_t.order + add_p_level*elem->p_level();
+// 
+//   fe_with_vec_switch(n_dofs_at_node(elem->type(), total_order, n));
+// }
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_dofs_at_node(const FEType & fe_t,
+//                             const int extra_order,
+//                             const Elem * elem,
+//                             const unsigned int n)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_n_dofs_at_node(fe_t, elem, n);
+// 
+// #endif
+// 
+//   // Ignore Elem::p_level() and instead use extra_order to compute total_order.
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   fe_with_vec_switch(n_dofs_at_node(elem->type(), total_order, n));
+// }
+// 
+// 
+// ===================================================
+unsigned int MGFEC::n_dofs_per_elem(
+  const unsigned int dim,
+  const FEType & fe_t,
+  const ElemType t
+){  // TODO  // libmesh_deprecated();
+  const Order o = fe_t.order;
+  fe_with_vec_switch(n_dofs_per_elem(t, o));
+}
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_dofs_per_elem(const FEType & fe_t,
+//                              const Elem * elem,
+//                              const bool add_p_level)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_n_dofs_per_elem(fe_t, elem);
+// 
+// #endif
+// 
+//   // Account for Elem::p_level() when computing total_order
+//   auto total_order = fe_t.order + add_p_level*elem->p_level();
+// 
+//   fe_with_vec_switch(n_dofs_per_elem(elem->type(), total_order));
+// }
+// 
+// 
+// 
+// unsigned int
+// MGFEC::n_dofs_per_elem(const FEType & fe_t,
+//                              const int extra_order,
+//                              const Elem * elem)
+// {
+//   // dim is required by the fe_with_vec_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_n_dofs_per_elem(fe_t, elem);
+// 
+// #endif
+// 
+//   // Ignore Elem::p_level() and instead use extra_order to compute total_order.
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   fe_with_vec_switch(n_dofs_per_elem(elem->type(), total_order));
+// }
+// 
+// 
+// 
+// void MGFEC::dofs_on_side(const Elem * const elem,
+//                                const unsigned int dim,
+//                                const FEType & fe_t,
+//                                unsigned int s,
+//                                std::vector<unsigned int> & di,
+//                                const bool add_p_level)
+// {
+//   const Order o = fe_t.order;
+// 
+//   void_fe_with_vec_switch(dofs_on_side(elem, o, s, di, add_p_level));
+// }
+// 
+// 
+// 
+// void MGFEC::dofs_on_edge(const Elem * const elem,
+//                                const unsigned int dim,
+//                                const FEType & fe_t,
+//                                unsigned int e,
+//                                std::vector<unsigned int> & di,
+//                                const bool add_p_level)
+// {
+//   const Order o = fe_t.order;
+// 
+//   void_fe_with_vec_switch(dofs_on_edge(elem, o, e, di, add_p_level));
+// }
+// 
+// 
+// 
+// 
+// void MGFEC::nodal_soln(const unsigned int dim,
+//                              const FEType & fe_t,
+//                              const Elem * elem,
+//                              const std::vector<Number> & elem_soln,
+//                              std::vector<Number> &       nodal_soln,
+//                              const bool add_p_level)
+// {
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     {
+//       ifem_nodal_soln(dim, fe_t, elem, elem_soln, nodal_soln);
+//       return;
+//     }
+// 
+// #endif
+// 
+//   const Order order = fe_t.order;
+// 
+//   void_fe_with_vec_switch(nodal_soln(elem, order, elem_soln, nodal_soln, add_p_level));
+// }
+// 
+// 
+// 
+// void MGFEC::side_nodal_soln(const FEType & fe_t,
+//                                   const Elem * elem,
+//                                   const unsigned int side,
+//                                   const std::vector<Number> & elem_soln,
+//                                   std::vector<Number> &       nodal_soln,
+//                                   const bool add_p_level)
+// {
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     {
+//       libmesh_not_implemented();
+//       return;
+//     }
+// 
+// #endif
+// 
+//   const Order order = fe_t.order;
+//   const unsigned int dim = elem->dim();
+// 
+//   void_fe_with_vec_switch(side_nodal_soln(elem, order, side, elem_soln, nodal_soln, add_p_level));
+// }
+// 
+// 
+// 
+// Point MGFEC::map(unsigned int dim,
+//                        const FEType & fe_t,
+//                        const Elem * elem,
+//                        const Point & p)
+// {
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_map(dim, fe_t, elem, p);
+// #endif
+//   fe_with_vec_switch(map(elem, p));
+// }
+// 
+// 
+// 
+// 
+// 
+// Point MGFEC::inverse_map (const unsigned int dim,
+//                                 const FEType & fe_t,
+//                                 const Elem * elem,
+//                                 const Point & p,
+//                                 const Real tolerance,
+//                                 const bool secure)
+// {
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     return ifem_inverse_map(dim, fe_t, elem, p,tolerance, secure);
+// 
+// #endif
+// 
+//   fe_with_vec_switch(inverse_map(elem, p, tolerance, secure));
+// }
+// 
+// 
+// 
+// 
+// void MGFEC::inverse_map (const unsigned int dim,
+//                                const FEType & fe_t,
+//                                const Elem * elem,
+//                                const std::vector<Point> & physical_points,
+//                                std::vector<Point> &       reference_points,
+//                                const Real tolerance,
+//                                const bool secure)
+// {
+//   const std::size_t n_pts = physical_points.size();
+// 
+//   // Resize the vector
+//   reference_points.resize(n_pts);
+// 
+//   if (n_pts == 0)
+//     {
+//       libMesh::err << "WARNING: empty vector physical_points!"
+//                    << std::endl;
+//       libmesh_here();
+//       return;
+//     }
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     {
+//       ifem_inverse_map(dim, fe_t, elem, physical_points, reference_points, tolerance, secure);
+//       return;
+//       // libmesh_not_implemented();
+//     }
+// 
+// #endif
+// 
+//   void_fe_with_vec_switch(inverse_map(elem, physical_points, reference_points, tolerance, secure));
+// }
+// 
+// 
+// 
+// bool MGFEC::on_reference_element(
+//   const double & p,
+//   const ElemType t,
+//   const double eps)
+// {
+//   return MGFEbase::on_reference_element(p,t,eps);
+// }
+// 
+// 
+// 
+// 
+double MGFEC::shape(const unsigned int dim,
+                        const FEType & fe_t,
+                        const ElemType t,
+                        const unsigned int i,
+                        const double  p[])
+{
+  // TODO:
+  // libmesh_deprecated();
+
+
+
+  const Order o = fe_t.order;
+
+  fe_switch(shape(t,o,i,p));
+}
+// 
+// Real MGFEC::shape(const unsigned int dim,
+//                         const FEType & fe_t,
+//                         const Elem * elem,
+//                         const unsigned int i,
+//                         const Point & p)
+// {
+//   // TODO:
+//   // libmesh_deprecated();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (elem && is_InfFE_elem(elem->type()))
+//     return ifem_shape(fe_t, elem, i, p);
+// 
+// #endif
+// 
+//   const Order o = fe_t.order;
+// 
+//   fe_switch(shape(elem,o,i,p));
+// }
+// 
+// 
+// 
+// Real
+// MGFEC::shape(const FEType & fe_t,
+//                    const Elem * elem,
+//                    const unsigned int i,
+//                    const Point & p,
+//                    const bool add_p_level)
+// {
+//   // dim is required by the fe_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (elem && is_InfFE_elem(elem->type()))
+//     return ifem_shape(fe_t, elem, i, p);
+// 
+// #endif
+// 
+//   // We are calling
+//   //
+//   // MGFE<X,Y>::shape(Elem *, Order, unsigned, Point, true)
+//   //
+//   // See fe.h for more details.
+//   fe_switch(shape(elem, fe_t.order, i, p, add_p_level));
+// }
+// 
+// 
+// 
+// Real
+// MGFEC::shape(const FEType & fe_t,
+//                    int extra_order,
+//                    const Elem * elem,
+//                    const unsigned int i,
+//                    const Point & p)
+// {
+//   // dim is required by the fe_switch macro
+//   auto dim = elem->dim();
+// 
+
+// 
+//   // We are calling
+//   //
+//   // MGFE<X,Y>::shape(Elem *, Order, unsigned, Point, false)
+//   //
+//   // with the last parameter set to "false" so that the
+//   // Elem::p_level() is not used internally and the "total_order" that
+//   // we compute is used instead. See fe.h for more details.
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   fe_switch(shape(elem, total_order, i, p, false));
+// }
+// 
+// 
+// 
+void MGFEC::shape(
+  const unsigned int dim,
+  const FEType & fe_t,
+  const ElemType t,
+  const unsigned int i,
+  const double  p[],
+  double  phi[]
+){ // TODO // libmesh_deprecated();
+  const Order o = fe_t.order;
+  switch(dim) {
+    case 0:
+      fe_scalar_vec_error_switch(0, shape(t,o,i,p), phi = , ; break;);
+      break;
+    case 1:
+      fe_scalar_vec_error_switch(1, shape(t,o,i,p), phi = , ; break;);
+      break;
+    case 2:
+      fe_scalar_vec_error_switch(2, shape(t,o,i,p), phi = , ; break;);
+      break;
+    case 3:
+      fe_scalar_vec_error_switch(3, shape(t,o,i,p), phi = , ; break;);
+      break;
+    default:
+      std::cerr<<"Invalid dimension = " << dim;
+    }
+  return;
+}
+// 
+// template<>
+// void MGFEC::shape<Real>(const unsigned int dim,
+//                               const FEType & fe_t,
+//                               const Elem * elem,
+//                               const unsigned int i,
+//                               const Point & p,
+//                               Real & phi)
+// {
+//   // TODO
+//   // libmesh_deprecated();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (elem && is_InfFE_elem(elem->type()))
+//     {
+//       phi = ifem_shape(fe_t, elem, i, p);
+//       return;
+//     }
+// #endif
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_scalar_vec_error_switch(0, shape(elem,o,i,p), phi = , ; break;);
+//       break;
+//     case 1:
+//       fe_scalar_vec_error_switch(1, shape(elem,o,i,p), phi = , ; break;);
+//       break;
+//     case 2:
+//       fe_scalar_vec_error_switch(2, shape(elem,o,i,p), phi = , ; break;);
+//       break;
+//     case 3:
+//       fe_scalar_vec_error_switch(3, shape(elem,o,i,p), phi = , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   return;
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::shape<Real>(const FEType & fe_t,
+//                               const Elem * elem,
+//                               const unsigned int i,
+//                               const Point & p,
+//                               Real & phi)
+// {
+//   // dim is required by the fe_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     {
+//       phi = ifem_shape(fe_t, elem, i, p);
+//       return;
+//     }
+// 
+// #endif
+// 
+//   // Below we call MGFE<X,Y>::shape(Elem *, Order, unsigned, Point, true)
+//   // so that the Elem::p_level() is accounted for internally.
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_scalar_vec_error_switch(0, shape(elem, fe_t.order, i, p, true), phi = , ; break;);
+//       break;
+//     case 1:
+//       fe_scalar_vec_error_switch(1, shape(elem, fe_t.order, i, p, true), phi = , ; break;);
+//       break;
+//     case 2:
+//       fe_scalar_vec_error_switch(2, shape(elem, fe_t.order, i, p, true), phi = , ; break;);
+//       break;
+//     case 3:
+//       fe_scalar_vec_error_switch(3, shape(elem, fe_t.order, i, p, true), phi = , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::shape<Real>(const FEType & fe_t,
+//                               int extra_order,
+//                               const Elem * elem,
+//                               const unsigned int i,
+//                               const Point & p,
+//                               Real & phi)
+// {
+//   // dim is required by the fe_switch macro
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type()))
+//     {
+//       phi = ifem_shape(fe_t, elem, i, p);
+//       return;
+//     }
+// 
+// #endif
+// 
+//   // Ignore Elem::p_level() and instead use extra_order to compute total_order
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   // Below we call
+//   //
+//   // MGFE<X,Y>::shape(Elem *, Order, unsigned, Point, false)
+//   //
+//   // so that the Elem::p_level() is ignored and the total_order that
+//   // we compute is used instead.
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_scalar_vec_error_switch(0, shape(elem, total_order, i, p, false), phi = , ; break;);
+//       break;
+//     case 1:
+//       fe_scalar_vec_error_switch(1, shape(elem, total_order, i, p, false), phi = , ; break;);
+//       break;
+//     case 2:
+//       fe_scalar_vec_error_switch(2, shape(elem, total_order, i, p, false), phi = , ; break;);
+//       break;
+//     case 3:
+//       fe_scalar_vec_error_switch(3, shape(elem, total_order, i, p, false), phi = , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::shapes<Real>(const unsigned int dim,
+//                                const FEType & fe_t,
+//                                const Elem * elem,
+//                                const unsigned int i,
+//                                const std::vector<Point> & p,
+//                                std::vector<Real> & phi,
+//                                const bool add_p_level)
+// {
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (elem && is_InfFE_elem(elem->type()))
+//     {
+//       FEType elevated = fe_t;
+//       elevated.order = fe_t.order + add_p_level * elem->p_level();
+//       for (auto qpi : index_range(p))
+//         phi[qpi] = ifem_shape(elevated, elem, i, p[qpi]);
+//       return;
+//     }
+// #endif
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_scalar_vec_error_switch(0, shapes(elem,o,i,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 1:
+//       fe_scalar_vec_error_switch(1, shapes(elem,o,i,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 2:
+//       fe_scalar_vec_error_switch(2, shapes(elem,o,i,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 3:
+//       fe_scalar_vec_error_switch(3, shapes(elem,o,i,p,phi,add_p_level), , ; return;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   return;
+// }
+// 
+// 
+// template<>
+// void MGFEC::all_shapes<Real>(const unsigned int dim,
+//                                    const FEType & fe_t,
+//                                    const Elem * elem,
+//                                    const std::vector<Point> & p,
+//                                    std::vector<std::vector<Real>> & phi,
+//                                    const bool add_p_level)
+// {
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (elem && is_InfFE_elem(elem->type()))
+//     {
+//       for (auto i : index_range(phi))
+//         MGFEC::shapes<Real>(dim, fe_t, elem, i, p, phi[i], add_p_level);
+//       return;
+//     }
+// #endif
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_scalar_vec_error_switch(0, all_shapes(elem,o,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 1:
+//       fe_scalar_vec_error_switch(1, all_shapes(elem,o,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 2:
+//       fe_scalar_vec_error_switch(2, all_shapes(elem,o,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 3:
+//       fe_scalar_vec_error_switch(3, all_shapes(elem,o,p,phi,add_p_level), , ; return;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   return;
+// }
+// 
+// 
+// 
+// 
+// 
+//  template<>
+// void MGFEC::shape<double> (
+//   const unsigned int dim,
+//                                       const FEType & fe_t,
+//                                       const ElemType t,
+//                                       const unsigned int i,
+//                                       const double & p,
+//                                       double & phi)
+// {  // TODO: libmesh_deprecated();
+// 
+//   // This API does not currently support infinite elements.
+//   const Order o = fe_t.order;
+//   switch(dim) {
+//     case 0:
+//       fe_vector_scalar_error_switch(0, shape(t,o,i,p), phi = , ; break;);
+//       break;
+//     case 1:
+//       fe_vector_scalar_error_switch(1, shape(t,o,i,p), phi = , ; break;);
+//       break;
+//     case 2:
+//       fe_vector_scalar_error_switch(2, shape(t,o,i,p), phi = , ; break;);
+//       break;
+//     case 3:
+//       fe_vector_scalar_error_switch(3, shape(t,o,i,p), phi = , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim;
+//     }
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::shape<RealGradient>(const FEType & fe_t,
+//                                       const Elem * elem,
+//                                       const unsigned int i,
+//                                       const Point & p,
+//                                       RealGradient & phi)
+// {
+//   // This API does not currently support infinite elements.
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+//   if (is_InfFE_elem(elem->type()))
+//   {
+//      libmesh_not_implemented();
+//   }
+// #endif
+// 
+//   auto dim = elem->dim();
+// 
+//   // We are calling
+//   //
+//   // MGFE<X,Y>::shape(Elem *, Order, unsigned, Point, true)
+//   //
+//   // with the last parameter set to "true" so that the Elem::p_level()
+//   // is accounted for internally. See fe.h for more details.
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_vector_scalar_error_switch(0, shape(elem, fe_t.order, i, p, true), phi = , ; break;);
+//       break;
+//     case 1:
+//       fe_vector_scalar_error_switch(1, shape(elem, fe_t.order, i, p, true), phi = , ; break;);
+//       break;
+//     case 2:
+//       fe_vector_scalar_error_switch(2, shape(elem, fe_t.order, i, p, true), phi = , ; break;);
+//       break;
+//     case 3:
+//       fe_vector_scalar_error_switch(3, shape(elem, fe_t.order, i, p, true), phi = , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::shape<RealGradient>(const FEType & fe_t,
+//                                       int extra_order,
+//                                       const Elem * elem,
+//                                       const unsigned int i,
+//                                       const Point & p,
+//                                       RealGradient & phi)
+// {
+//   // This API does not currently support infinite elements.
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+//   if (is_InfFE_elem(elem->type()))
+//   {
+//      libmesh_not_implemented();
+//   }
+// #endif
+// 
+//   auto dim = elem->dim();
+// 
+//   // We are calling
+//   //
+//   // MGFE<X,Y>::shape(Elem *, Order, unsigned, Point, false)
+//   //
+//   // with the last parameter set to "false" so that the
+//   // Elem::p_level() is not used internally and the "total_order" that
+//   // we compute is used instead. See fe.h for more details.
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_vector_scalar_error_switch(0, shape(elem, total_order, i, p, false), phi = , ; break;);
+//       break;
+//     case 1:
+//       fe_vector_scalar_error_switch(1, shape(elem, total_order, i, p, false), phi = , ; break;);
+//       break;
+//     case 2:
+//       fe_vector_scalar_error_switch(2, shape(elem, total_order, i, p, false), phi = , ; break;);
+//       break;
+//     case 3:
+//       fe_vector_scalar_error_switch(3, shape(elem, total_order, i, p, false), phi = , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::shapes<RealGradient>(const unsigned int dim,
+//                                        const FEType & fe_t,
+//                                        const Elem * elem,
+//                                        const unsigned int i,
+//                                        const std::vector<Point> & p,
+//                                        std::vector<RealGradient> & phi,
+//                                        const bool add_p_level)
+// {
+//   // This is actually an issue for infinite elements: They require type 'Gradient'!
+//   if (elem->infinite())
+//     libmesh_not_implemented();
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_vector_scalar_error_switch(0, shapes(elem,o,i,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 1:
+//       fe_vector_scalar_error_switch(1, shapes(elem,o,i,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 2:
+//       fe_vector_scalar_error_switch(2, shapes(elem,o,i,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 3:
+//       fe_vector_scalar_error_switch(3, shapes(elem,o,i,p,phi,add_p_level), , ; return;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   return;
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::all_shapes<RealGradient>(const unsigned int dim,
+//                                            const FEType & fe_t,
+//                                            const Elem * elem,
+//                                            const std::vector<Point> & p,
+//                                            std::vector<std::vector<RealGradient>> & phi,
+//                                            const bool add_p_level)
+// {
+//   // This is actually an issue for infinite elements: They require type 'Gradient'!
+//   if (elem->infinite())
+//     libmesh_not_implemented();
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_vector_scalar_error_switch(0, all_shapes(elem,o,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 1:
+//       fe_vector_scalar_error_switch(1, all_shapes(elem,o,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 2:
+//       fe_vector_scalar_error_switch(2, all_shapes(elem,o,p,phi,add_p_level), , ; return;);
+//       break;
+//     case 3:
+//       fe_vector_scalar_error_switch(3, all_shapes(elem,o,p,phi,add_p_level), , ; return;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   return;
+// }
+// 
+// 
+// double & MGFEC::shape_function(const unsigned int dim,
+//                             const FEType & fe_t,
+//                             const ElemType t)
+// {
+//   // TODO
+//   // libmesh_deprecated();
+// 
+// 
+//   fe_switch(shape);
+// }
+// 
+// 
+// 
+// MGFEC::shape_ptr
+// MGFEC::shape_function(const FEType & fe_t,
+//                             const Elem * elem)
+// {
+//   // dim is needed by the fe_switch macros below
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+//   if (is_InfFE_elem(elem->type()))
+//     inf_fe_switch(shape);
+// #endif
+//   fe_switch(shape);
+// }
+// 
+// 
+// double MGFEC::shape_deriv(const unsigned int dim,
+//                               const FEType & fe_t,
+//                               const ElemType t,
+//                               const unsigned int i,
+//                               const unsigned int j,
+//                               const double & p)
+// {
+//   // TODO
+//   // libmesh_deprecated();
+// 
+//   assert (dim>j);
+// 
+// 
+//   const Order o = fe_t.order;
+//   fe_switch(shape_deriv(t,o,i,j,p));
+//   return 0;
+// }
+// 
+// 
+// Real MGFEC::shape_deriv(const unsigned int dim,
+//                               const FEType & fe_t,
+//                               const Elem * elem,
+//                               const unsigned int i,
+//                               const unsigned int j,
+//                               const Point & p)
+// {
+//   // TODO
+//   // libmesh_deprecated();
+// 
+//   libmesh_assert_greater (dim,j);
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (elem->infinite()){
+//     return ifem_shape_deriv(fe_t, elem, i, j, p);
+//   }
+// 
+// #endif
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_family_switch (0, shape_deriv(elem, o, i, j, p), return , ;);
+//     case 1:
+//       fe_family_switch (1, shape_deriv(elem, o, i, j, p), return , ;);
+//     case 2:
+//       fe_family_switch (2, shape_deriv(elem, o, i, j, p), return , ;);
+//     case 3:
+//       fe_family_switch (3, shape_deriv(elem, o, i, j, p), return , ;);
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+//   return 0;
+// }
+// 
+// 
+// 
+// Real MGFEC::shape_deriv(const FEType & fe_t,
+//                               const Elem * elem,
+//                               const unsigned int i,
+//                               const unsigned int j,
+//                               const Point & p)
+// {
+//   auto dim = elem->dim();
+// 
+//   libmesh_assert_greater (dim, j);
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (is_InfFE_elem(elem->type())){
+//     return ifem_shape_deriv(fe_t, elem, i, j, p);
+//   }
+// 
+// #endif
+// 
+//   // Account for Elem::p_level() when computing total order. Note: we are calling
+//   // FE::shape_deriv() with the final argument == true so that the Elem::p_level()
+//   // is accounted for automatically internally.
+//   fe_switch(shape_deriv(elem, fe_t.order, i, j, p, true));
+// 
+//   // We'll never get here
+//   return 0;
+// }
+// 
+// 
+// 
+// Real MGFEC::shape_deriv(const FEType & fe_t,
+//                               int extra_order,
+//                               const Elem * elem,
+//                               const unsigned int i,
+//                               const unsigned int j,
+//                               const Point & p)
+// {
+//   auto dim = elem->dim();
+// 
+//   libmesh_assert_greater (dim, j);
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (elem->infinite()){
+//     return ifem_shape_deriv(fe_t, elem, i, j, p);
+//   }
+// 
+// #endif
+// 
+//   // Ignore Elem::p_level() when computing total order, use
+//   // extra_order instead.
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   // We call shape_deriv() with the final argument == false so that
+//   // the Elem::p_level() is ignored internally.
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_family_switch (0, shape_deriv(elem, total_order, i, j, p, false), return , ;);
+//     case 1:
+//       fe_family_switch (1, shape_deriv(elem, total_order, i, j, p, false), return , ;);
+//     case 2:
+//       fe_family_switch (2, shape_deriv(elem, total_order, i, j, p, false), return , ;);
+//     case 3:
+//       fe_family_switch (3, shape_deriv(elem, total_order, i, j, p, false), return , ;);
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   // We'll never get here
+//   return 0;
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::shape_derivs<Real>(const FEType & fe_t,
+//                                      const Elem * elem,
+//                                      const unsigned int i,
+//                                      const unsigned int j,
+//                                      const std::vector<Point> & p,
+//                                      std::vector<Real> & dphi,
+//                                      const bool add_p_level)
+// {
+//   const Order o = fe_t.order;
+// 
+//   switch(elem->dim())
+//     {
+//     case 0:
+//       fe_scalar_vec_error_switch(0, shape_derivs(elem,o,i,j,p,dphi,add_p_level), , ; break;);
+//       break;
+//     case 1:
+//       fe_scalar_vec_error_switch(1, shape_derivs(elem,o,i,j,p,dphi,add_p_level), , ; break;);
+//       break;
+//     case 2:
+//       fe_scalar_vec_error_switch(2, shape_derivs(elem,o,i,j,p,dphi,add_p_level), , ; break;);
+//       break;
+//     case 3:
+//       fe_scalar_vec_error_switch(3, shape_derivs(elem,o,i,j,p,dphi,add_p_level), , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << elem->dim());
+//     }
+// 
+//   return;
+// }
+// 
+// 
+// 
+// // Only instantiating Real because we don't expect vector-valued
+// // mapping functions, and that's what's using this interface.
+// template<>
+// void MGFEC::all_shape_derivs<Real>(const unsigned int dim,
+//                                          const FEType & fe_t,
+//                                          const Elem * elem,
+//                                          const std::vector<Point> & p,
+//                                          std::vector<std::vector<Real>> * comps[3],
+//                                          const bool add_p_level)
+// {
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+// 
+//   if (elem && is_InfFE_elem(elem->type()))
+//     {
+//       for (auto j : make_range(dim))
+//         for (auto i : index_range(*comps[j]))
+//           MGFEC::shape_derivs<Real>(fe_t, elem, i, j, p, (*comps[j])[i], add_p_level);
+//       return;
+//     }
+// #endif
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_scalar_vec_error_switch(0, all_shape_derivs(elem,o,p,comps,add_p_level), , ; return;);
+//       break;
+//     case 1:
+//       fe_scalar_vec_error_switch(1, all_shape_derivs(elem,o,p,comps,add_p_level), , ; return;);
+//       break;
+//     case 2:
+//       fe_scalar_vec_error_switch(2, all_shape_derivs(elem,o,p,comps,add_p_level), , ; return;);
+//       break;
+//     case 3:
+//       fe_scalar_vec_error_switch(3, all_shape_derivs(elem,o,p,comps,add_p_level), , ; return;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   return;
+// }
+// 
+// 
+// 
+// template<>
+// void MGFEC::shape_derivs<RealGradient>(const FEType & fe_t,
+//                                              const Elem * elem,
+//                                              const unsigned int i,
+//                                              const unsigned int j,
+//                                              const std::vector<Point> & p,
+//                                              std::vector<RealGradient> & dphi,
+//                                              const bool add_p_level)
+// {
+//   const Order o = fe_t.order;
+// 
+//   switch(elem->dim())
+//     {
+//     case 0:
+//       fe_vector_scalar_error_switch(0, shape_derivs(elem,o,i,j,p,dphi,add_p_level), , ; break;);
+//       break;
+//     case 1:
+//       fe_vector_scalar_error_switch(1, shape_derivs(elem,o,i,j,p,dphi,add_p_level), , ; break;);
+//       break;
+//     case 2:
+//       fe_vector_scalar_error_switch(2, shape_derivs(elem,o,i,j,p,dphi,add_p_level), , ; break;);
+//       break;
+//     case 3:
+//       fe_vector_scalar_error_switch(3, shape_derivs(elem,o,i,j,p,dphi,add_p_level), , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << elem->dim());
+//     }
+// 
+//   return;
+// }
+// 
+// 
+// 
+// double &
+// MGFEC::shape_deriv_function(const unsigned int dim,
+//                                   const FEType & fe_t,
+//                                   const ElemType t)
+// {
+//   // TODO
+//   // libmesh_deprecated();
+// 
+//   fe_switch(shape_deriv);
+// }
+// 
+// 
+// 
+// MGFEC::shape_deriv_ptr
+// MGFEC::shape_deriv_function(const FEType & fe_t,
+//                                   const Elem * elem)
+// {
+//   // dim is needed by the fe_switch macros below
+//   auto dim = elem->dim();
+// 
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+//   if (is_InfFE_elem(elem->type()))
+//   {
+//     inf_fe_switch(shape_deriv);
+//   }
+// #endif
+//   fe_switch(shape_deriv);
+// }
+// 
+// 
+// #ifdef LIBMESH_ENABLE_SECOND_DERIVATIVES
+//  double MGFEC::shape_second_deriv(const unsigned int dim,
+//                                      const FEType & fe_t,
+//                                      const ElemType t,
+//                                      const unsigned int i,
+//                                      const unsigned int j,
+//                                      const double & p)
+// {
+//   // TODO:
+//   // libmesh_deprecated();
+// 
+//   assert(dim*(dim-1)>=j);
+// 
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_family_switch (0, shape_second_deriv(t, o, i, j, p), return , ;);
+//     case 1:
+//       fe_family_switch (1, shape_second_deriv(t, o, i, j, p), return , ;);
+//     case 2:
+//       fe_family_switch (2, shape_second_deriv(t, o, i, j, p), return  , ;);
+//     case 3:
+//       fe_family_switch (3, shape_second_deriv(t, o, i, j, p), return , ;);
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim;
+//     }
+//   return 0;
+// }
+// 
+// 
+// Real MGFEC::shape_second_deriv(const unsigned int dim,
+//                                      const FEType & fe_t,
+//                                      const Elem * elem,
+//                                      const unsigned int i,
+//                                      const unsigned int j,
+//                                      const Point & p)
+// {
+//   // TODO:
+//   // libmesh_deprecated();
+// 
+//   libmesh_assert_greater_equal (dim*(dim-1),j);
+// 
+//   if (elem->infinite())
+//     libmesh_not_implemented();
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_family_switch (0, shape_second_deriv(elem, o, i, j, p), return , ;);
+//     case 1:
+//       fe_family_switch (1, shape_second_deriv(elem, o, i, j, p), return , ;);
+//     case 2:
+//       fe_family_switch (2, shape_second_deriv(elem, o, i, j, p), return , ;);
+//     case 3:
+//       fe_family_switch (3, shape_second_deriv(elem, o, i, j, p), return , ;);
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+//   return 0;
+// }
+// 
+// 
+// 
+// Real MGFEC::shape_second_deriv(const FEType & fe_t,
+//                                      const Elem * elem,
+//                                      const unsigned int i,
+//                                      const unsigned int j,
+//                                      const Point & p)
+// {
+//   auto dim = elem->dim();
+// 
+//   libmesh_assert_greater_equal (dim*(dim-1),j);
+// #ifdef LIBMESH_ENABLE_INFINITE_ELEMENTS
+//   if (is_InfFE_elem(elem->type()))
+//     libmesh_not_implemented();
+// #endif
+// 
+//   // We are calling FE::shape_second_deriv() with the final argument
+//   // == true so that the Elem::p_level() is accounted for
+//   // automatically internally.
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_family_switch (0, shape_second_deriv(elem, fe_t.order, i, j, p, true), return , ;);
+//     case 1:
+//       fe_family_switch (1, shape_second_deriv(elem, fe_t.order, i, j, p, true), return , ;);
+//     case 2:
+//       fe_family_switch (2, shape_second_deriv(elem, fe_t.order, i, j, p, true), return , ;);
+//     case 3:
+//       fe_family_switch (3, shape_second_deriv(elem, fe_t.order, i, j, p, true), return , ;);
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   // We'll never get here
+//   return 0;
+// }
+// 
+// 
+// 
+// Real MGFEC::shape_second_deriv(const FEType & fe_t,
+//                                      int extra_order,
+//                                      const Elem * elem,
+//                                      const unsigned int i,
+//                                      const unsigned int j,
+//                                      const Point & p)
+// {
+//   auto dim = elem->dim();
+// 
+//   libmesh_assert_greater_equal (dim*(dim-1),j);
+// 
+//   if (elem->infinite())
+//     libmesh_not_implemented();
+// 
+//   // Ignore Elem::p_level() when computing total order, use
+//   // extra_order instead.
+//   auto total_order = fe_t.order + extra_order;
+// 
+//   // We are calling FE::shape_second_deriv() with the final argument
+//   // == false so that the Elem::p_level() is ignored and the
+//   // total_order we compute is used instead.
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_family_switch (0, shape_second_deriv(elem, total_order, i, j, p, false), return , ;);
+//     case 1:
+//       fe_family_switch (1, shape_second_deriv(elem, total_order, i, j, p, false), return , ;);
+//     case 2:
+//       fe_family_switch (2, shape_second_deriv(elem, total_order, i, j, p, false), return , ;);
+//     case 3:
+//       fe_family_switch (3, shape_second_deriv(elem, total_order, i, j, p, false), return , ;);
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   // We'll never get here
+//   return 0;
+// }
+// 
+// 
+// 
+// double &
+// MGFEC::shape_second_deriv_function(const unsigned int dim,
+//                                          const FEType & fe_t,
+//                                          const ElemType t)
+// {
+//   // TODO
+//   // libmesh_deprecated();
+// 
+// 
+//   fe_switch(shape_second_deriv);
+// }
+// 
+// 
+// 
+// MGFEC::shape_second_deriv_ptr
+// MGFEC::shape_second_deriv_function(const FEType & fe_t,
+//                                          const Elem * elem)
+// {
+//   auto dim = elem->dim();
+
+//   fe_switch(shape_second_deriv);
+// }
+// 
+// #endif //LIBMESH_ENABLE_SECOND_DERIVATIVES
+// 
+// 
+// template<>
+// void MGFEC::shape<RealGradient>(const unsigned int dim,
+//                                       const FEType & fe_t,
+//                                       const Elem * elem,
+//                                       const unsigned int i,
+//                                       const Point & p,
+//                                       RealGradient & phi)
+// {
+//   // TODO
+//   // libmesh_deprecated();
+// 
+//   // This is actually an issue for infinite elements: They require type 'Gradient'!
+//   if (elem->infinite())
+//     libmesh_not_implemented();
+// 
+//   const Order o = fe_t.order;
+// 
+//   switch(dim)
+//     {
+//     case 0:
+//       fe_vector_scalar_error_switch(0, shape(elem,o,i,p), phi = , ; break;);
+//       break;
+//     case 1:
+//       fe_vector_scalar_error_switch(1, shape(elem,o,i,p), phi = , ; break;);
+//       break;
+//     case 2:
+//       fe_vector_scalar_error_switch(2, shape(elem,o,i,p), phi = , ; break;);
+//       break;
+//     case 3:
+//       fe_vector_scalar_error_switch(3, shape(elem,o,i,p), phi = , ; break;);
+//       break;
+//     default:
+//       std::cerr<<"Invalid dimension = " << dim);
+//     }
+// 
+//   return;
+// }
+// 
+// void MGFEC::compute_data(const unsigned int dim,
+//                                const FEType & fe_t,
+//                                const Elem * elem,
+//                                FEComputeData & data)
+// {
+
+// 
+//   const unsigned int n_dof = n_dofs (fe_t, elem);
+//   const Point & p = data.p;
+//   data.shape.resize(n_dof);
+// 
+//   if (data.need_derivative())
+//     {
+//       data.dshape.resize(n_dof);
+//       data.local_transform.resize(dim);
+// 
+//       for (unsigned int d=0; d<dim; d++)
+//         data.local_transform[d].resize(dim);
+// 
+//       auto fe = FEBase::build(dim, fe_t);
+//       std::vector<Point> pt = {p};
+//       fe->get_dphideta(); // to compute the map
+//       fe->reinit(elem, &pt);
+// 
+//       // compute the reference->physical map.
+//       data.local_transform[0][0] = fe->get_dxidx()[0];
+//       if (dim > 1)
+//         {
+//           data.local_transform[1][0] = fe->get_detadx()[0];
+//           data.local_transform[1][1] = fe->get_detady()[0];
+//           data.local_transform[0][1] = fe->get_dxidy()[0];
+//           if (dim > 2)
+//             {
+//               data.local_transform[2][0] = fe->get_dzetadx()[0];
+//               data.local_transform[2][1] = fe->get_dzetady()[0];
+//               data.local_transform[2][2] = fe->get_dzetadz()[0];
+//               data.local_transform[1][2] = fe->get_detadz()[0];
+//               data.local_transform[0][2] = fe->get_dxidz()[0];
+//             }
+//         }
+//     }
+// 
+//   // set default values for all the output fields
+//   data.init();
+// 
+//   for (unsigned int n=0; n<n_dof; n++)
+//     {
+//       // Here we pass the original fe_t object. Additional p-levels
+//       // (if any) are handled internally by the shape() and
+//       // shape_deriv() functions since they have access to the elem
+//       // pointer. Note that we are already using the n_dof value
+//       // appropriate to the elevated p-level.
+//       data.shape[n] = shape(dim, fe_t, elem, n, p);
+//       if (data.need_derivative())
+//         {
+//           for (unsigned int j=0; j<dim; j++)
+//             data.dshape[n](j) = shape_deriv(dim, fe_t, elem, n, j, p);
+//         }
+//     }
+// }
+// 
+
+// 
+// 
+// 
+ unsigned int MGFEC::max_order(const FEType & fe_t, const ElemType & el_t){
+//   // Yeah, I know, infinity is much larger than 11, but our
+//   // solvers don't seem to like high degree polynomials, and our
+//   // quadrature rules and number_lookups tables
+//   // need to go up higher.
+   const unsigned int unlimited = 11;
+// 
+//   // If we used 0 as a default, then elements missing from this
+//   // table (e.g. infinite elements) would be considered broken.
+   const unsigned int unknown = unlimited;
+// 
+   switch (fe_t.family){
+    case LAGRANGE:  //     case LAGRANGE_VEC:
+       switch (el_t){  case EDGE2:  case EDGE3:  case EDGE4:   return 3;
+         case TRI3:      case TRISHELL3:        return 1;
+         case TRI6:        return 2;
+         case TRI7:           return 3;
+         case QUAD4:        case QUADSHELL4:   return 1;
+        case QUAD8:         case QUADSHELL8:         case QUAD9: case QUADSHELL9:     return 2;
+        case TET4:      return 1;
+        case TET10:     return 2;
+        case TET14:     return 3;
+        case HEX8:      return 1;
+        case HEX20:    case HEX27:       return 2;
+        case PRISM6:    return 1;
+        case PRISM15:   case PRISM18:     return 2;
+        case PRISM20:     case PRISM21:
+          return 3;   case PYRAMID5:         return 1;
+       case PYRAMID13:    case PYRAMID14:    return 2;
+        case PYRAMID18:        return 3;
+        default:   return unknown;}
+       break;
+    case MONOMIAL:   case L2_LAGRANGE:    case L2_LAGRANGE_VEC:    case L2_HIERARCHIC:    case L2_HIERARCHIC_VEC:     case MONOMIAL_VEC:
+      switch (el_t)  {
+        case EDGE2:     case EDGE3:    case EDGE4:    case TRI3:   case TRISHELL3:   case TRI6:   case TRI7:
+        case QUAD4:   case QUADSHELL4:   case QUAD8:   case QUADSHELL8:     case QUAD9:    case QUADSHELL9:
+        case TET4:     case TET10:  case TET14:   case HEX8:   case HEX20:  case HEX27:
+        case PRISM6:  case PRISM15:    case PRISM18:     case PRISM20:    case PRISM21:
+        case PYRAMID5:      case PYRAMID13:      case PYRAMID14:      case PYRAMID18:    return unlimited;
+        default:       return unknown;}
+    case XYZ:
+      switch (el_t)  {    case EDGE2:  case EDGE3:  case EDGE4:       case TRI3:   case TRISHELL3:
+        case TRI6:     case TRI7:   case QUAD4:    case QUADSHELL4:     case QUAD8:    case QUADSHELL8:    case QUAD9:    case QUADSHELL9:
+        case TET4:   case TET10:   case TET14:     case HEX8:     case HEX20:         case HEX27:
+        case PRISM6:     case PRISM15:     case PRISM18:     case PRISM20:     case PRISM21:
+        case PYRAMID5:     case PYRAMID13:   case PYRAMID14:       case PYRAMID18:        return unlimited;
+        default:      return unknown;    }
+      break;
+    case CLOUGH:   switch (el_t)    {    case EDGE2:   case EDGE3:    return 3;
+        case EDGE4:    case TRI3:     case TRISHELL3:         return 0;
+        case TRI6:    case TRI7:        return 3;
+        case QUAD4:    case QUADSHELL4:      case QUAD8:     case QUADSHELL8:      case QUAD9:       case QUADSHELL9:
+        case TET4:     case TET10:    case TET14:     case HEX8:     case HEX20:     case HEX27:     case PRISM6:
+        case PRISM15:     case PRISM18:     case PRISM20:     case PRISM21:    case PYRAMID5:     case PYRAMID13:    case PYRAMID14:      case PYRAMID18:    return 0;
+        default:         return unknown;        }
+      break;
+    case HERMITE:       switch (el_t)       {     case EDGE2:     case EDGE3:      return unlimited;
+        case EDGE4:        case TRI3:     case TRISHELL3:     case TRI6:       case TRI7:        return 0;
+        case QUAD4:        case QUADSHELL4:        return 3;
+        case QUAD8:       case QUADSHELL8:       case QUAD9:        case QUADSHELL9:        return unlimited;
+        case TET4:      case TET10:        case TET14:         return 0;
+        case HEX8:         return 3;
+        case HEX20:      case HEX27:        return unlimited;
+        case PRISM6:       case PRISM15:      case PRISM18:     case PRISM20:      case PRISM21:
+        case PYRAMID5:       case PYRAMID13:       case PYRAMID14:        case PYRAMID18:         return 0;
+        default:          return unknown;      }
+      break;
+    case HIERARCHIC:    case HIERARCHIC_VEC:      switch (el_t)   {
+        case EDGE2:       case EDGE3:        case EDGE4:         return unlimited;
+        case TRI3:       case TRISHELL3:           return 1;
+        case TRI6:      case TRI7:         return unlimited;
+        case QUAD4:      case QUADSHELL4:          return 1;
+        case QUAD8:       case QUADSHELL8:        case QUAD9:        case QUADSHELL9:           return unlimited;
+        case TET4:         return 1;
+        case TET10:          return 2;
+        case TET14:          return unlimited;
+        case HEX8:        case HEX20:          return 1;
+        case HEX27:         return unlimited;
+        case PRISM6:      case PRISM15:      case PRISM18:       case PRISM20:
+        case PRISM21:       return unlimited;
+        case PYRAMID5:      case PYRAMID13:        case PYRAMID14:         case PYRAMID18:          return 0;
+        default:     return unknown;        }
+      break;
+    case SIDE_HIERARCHIC:      switch (el_t)        {     case EDGE2:     case EDGE3:       case EDGE4:    return unlimited; // although it's all the same as 0...
+        case TRI3:       case TRISHELL3:          return 0;       case TRI6:        case TRI7:       return unlimited;
+        case QUAD4:  case QUADSHELL4:          return 0;
+        case QUAD8:      case QUADSHELL8:     case QUAD9:      case QUADSHELL9:     return unlimited;
+        case TET4:     case TET10:       return 0;
+        case TET14:       return unlimited;
+        case HEX8:     case HEX20:        return 0;
+        case HEX27:        return unlimited;
+        case PRISM6:  case PRISM15:    case PRISM18:       return 0;
+        case PRISM20:       case PRISM21:         return unlimited;
+        case PYRAMID5:    case PYRAMID13:      case PYRAMID14:     case PYRAMID18:     return 0;
+        default:        return unknown;       }
+      break;
+    case SUBDIVISION:      switch (el_t)        {        case TRI3SUBDIVISION:          return unlimited;
+        default:         return unknown;         }
+      break;
+    case NEDELEC_ONE:      switch (el_t)       {
+        case TRI6:      case TRI7:    case QUAD8:    case QUAD9:       return 5;
+        case TET10:      case TET14:     case HEX20:     case HEX27:      return 1;
+        default:       return 0;       }
+      break;
+    case RAVIART_THOMAS:   case L2_RAVIART_THOMAS:      switch (el_t)     {
+        case TRI6:        case TRI7:       case QUAD8:        case QUAD9:          return 5;
+        case TET14:        case HEX27:          return 1;
+        default:         return 0;         }
+      break;
+     default:      return 0;   break;
+     }
+ }
+// 
+// 
+// 
+// bool MGFEC::extra_hanging_dofs(const FEType & fe_t)
+// {
+//   switch (fe_t.family)
+//     {
+//     case LAGRANGE:
+//     case L2_LAGRANGE:
+//     case MONOMIAL:
+//     case MONOMIAL_VEC:
+//     case L2_HIERARCHIC:
+//     case SIDE_HIERARCHIC:
+//     case XYZ:
+//     case SUBDIVISION:
+//     case LAGRANGE_VEC:
+//     case L2_LAGRANGE_VEC:
+//     case NEDELEC_ONE:
+//     case RAVIART_THOMAS:
+//     case L2_RAVIART_THOMAS:
+//       return false;
+//     case CLOUGH:
+//     case HERMITE:
+//     case HIERARCHIC:
+//     case HIERARCHIC_VEC:
+//     case L2_HIERARCHIC_VEC:
+// #ifdef LIBMESH_ENABLE_HIGHER_ORDER_SHAPES
+//     case BERNSTEIN:
+//     case SZABAB:
+//     case RATIONAL_BERNSTEIN:
+// #endif
+//     default:
+//       return true;
+//     }
+// }
+// 
+// FEFieldType MGFEC::field_type(const FEType & fe_type)
+// {
+//   return MGFEC::field_type(fe_type.family);
+// }
+// 
+// FEFieldType MGFEC::field_type (const FEFamily & fe_family)
+// {
+//   switch (fe_family)
+//     {
+//     case HIERARCHIC_VEC:
+//     case L2_HIERARCHIC_VEC:
+//     case LAGRANGE_VEC:
+//     case L2_LAGRANGE_VEC:
+//     case NEDELEC_ONE:
+//     case MONOMIAL_VEC:
+//     case RAVIART_THOMAS:
+//     case L2_RAVIART_THOMAS:
+//       return TYPE_VECTOR;
+//     default:
+//       return TYPE_SCALAR;
+//     }
+// }
+// 
+// unsigned int MGFEC::n_vec_dim (const MeshBase & mesh,
+//                                      const FEType & fe_type)
+// {
+//   switch (fe_type.family)
+//     {
+//       //FIXME: We currently assume that the number of vector components is tied
+//       //       to the mesh dimension. This will break for mixed-dimension meshes.
+//     case HIERARCHIC_VEC:
+//     case L2_HIERARCHIC_VEC:
+//     case LAGRANGE_VEC:
+//     case L2_LAGRANGE_VEC:
+//     case NEDELEC_ONE:
+//     case MONOMIAL_VEC:
+//     case RAVIART_THOMAS:
+//     case L2_RAVIART_THOMAS:
+//       return mesh.mesh_dimension();
+//     default:
+//       return 1;
+//     }
+// }
+// 
+// 
+// 
+// 
+bool MGFEC::is_hierarchic (const FEType & fe_type){
+  switch (fe_type.family)    {
+    case HERMITE:    case HIERARCHIC:    case HIERARCHIC_VEC:    case L2_HIERARCHIC:    case L2_HIERARCHIC_VEC:    case MONOMIAL:    case MONOMIAL_VEC:
+    case SIDE_HIERARCHIC:    case SZABAB:    case XYZ:      return true;
+
+    case BERNSTEIN:    case CLOUGH:    case LAGRANGE:    case LAGRANGE_VEC:
+    case L2_LAGRANGE:    case L2_LAGRANGE_VEC:    case NEDELEC_ONE:    case RATIONAL_BERNSTEIN:    case RAVIART_THOMAS:    case L2_RAVIART_THOMAS:
+    case SCALAR:    case SUBDIVISION:      return false;
+    default:      std::cerr<<"Unknown FE Family " <<fe_type.family;
+    }
+}
+
+
+
+FEContinuity MGFEC::get_continuity(const FEType & fe_type){
+  switch (fe_type.family) {
+      // Discontinuous elements
+    case MONOMIAL:   case MONOMIAL_VEC:  case L2_HIERARCHIC:  case L2_LAGRANGE:   case XYZ:   case SCALAR:
+    case L2_RAVIART_THOMAS:    case L2_HIERARCHIC_VEC:    case L2_LAGRANGE_VEC:      return DISCONTINUOUS;
+      // C0 elements
+    case LAGRANGE:   case HIERARCHIC:   case BERNSTEIN:   case SZABAB:   case RATIONAL_BERNSTEIN:   
+        case LAGRANGE_VEC:    case HIERARCHIC_VEC:      return C_ZERO;
+      // C1 elements
+    case CLOUGH:    case HERMITE:    case SUBDIVISION:      return C_ONE;
+    case NEDELEC_ONE:   return H_CURL;
+    case RAVIART_THOMAS:  return H_DIV;
+      // Side elements
+    case SIDE_HIERARCHIC:      return SIDE_DISCONTINUOUS;
+    default:     std::cerr<<"Unknown FE Family " <<fe_type.family;
+    }
+}
+
+
+// } // namespace libMesh
